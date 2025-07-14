@@ -3,10 +3,11 @@ channels:
   - conda-forge
 dependencies:
   - python=3.12
-  - pip
   - black
   - flake8
   - isort
-  - pip:
-    - python-dotenv
-    - -e .
+  - pip
+  - matplotlib
+  - pandas=2.3.1
+  - rdkit=2025.03.4
+  - umap-learn=0.5.9.post2
