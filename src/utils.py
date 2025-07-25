@@ -212,3 +212,77 @@ def read_sdf(file):
     if len(molecules["smiles"]) == 0:
         molecules.pop("smiles", None)
     return pd.DataFrame(molecules)
+
+
+def get_descriptors(mol):
+    selected_descriptors = [
+        "ExactMolWt",
+        "RingCount",
+        "NumAromaticRings",
+        "NumAliphaticRings",
+        "NumHDonors",
+        "NumHAcceptors",
+        "MolLogP",
+        "TPSA",
+        "NumRotatableBonds",
+        "fr_halogen",
+        "NumBridgeheadAtoms",
+        "FractionCSP3",
+    ]
+    calc_desc = {}
+    for descriptor in selected_descriptors:
+        function = RDKIT_DESCRIPTORS[descriptor]
+        try:
+            value = function(mol)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            value = np.nan
+        calc_desc[descriptor] = value
+    return calc_desc
+
+
+def count_oxygen_atoms(mol):
+    count = 0
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 8:
+            count += 1
+    return count
+
+
+def count_nitrogen_atoms(mol):
+    count = 0
+    for atom in mol.GetAtoms():
+        if atom.GetAtomicNum() == 7:
+            count += 1
+    return count
+
+
+def count_lipinski_violations(desc):
+    violations = [
+        desc["ExactMolWt"] < 150 or desc["ExactMolWt"] > 500,
+        desc["MolLogP"] > 5,
+        desc["NumHDonors"] > 5,
+        desc["NumHAcceptors"] > 10
+    ]
+    return sum(violations)
+
+
+def count_veber_violations(desc):
+    violations = [
+        desc["NumRotatableBonds"] > 10,
+        desc["TPSA"] > 140
+    ]
+    return sum(violations)
+
+
+def calculate_selected_descriptors(mol):
+    # calculate molecular descriptors
+    descriptors = get_descriptors(mol)
+    # calculate atomic descriptors
+    descriptors["NumOxygen"] = count_oxygen_atoms(mol)
+    descriptors["NumNitrogen"] = count_nitrogen_atoms(mol)
+    # calculate drug-like violations
+    descriptors["LipinskiViolations"] = count_lipinski_violations(descriptors)
+    descriptors["VeberViolations"] = count_veber_violations(descriptors)
+    return descriptors
