@@ -1,13 +1,19 @@
 name: 2025_greiner_pseudo-np
 channels:
   - conda-forge
+  - defaults
 dependencies:
   - python=3.12
   - black
   - flake8
   - isort
+  - openpyxl
   - pip
-  - matplotlib
+  - matplotlib=3.10.3
   - pandas=2.3.1
   - rdkit=2025.03.4
+  - scikit-learn=1.7.0
+  - tqdm
   - umap-learn=0.5.9.post2
+  - pip:
+    - pandarallel==1.6.5
