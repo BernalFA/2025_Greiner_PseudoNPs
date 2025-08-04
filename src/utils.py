@@ -229,7 +229,9 @@ def get_descriptors(mol):
         "NumBridgeheadAtoms",
         "FractionCSP3",
     ]
-    calc_desc = {}
+    calc_desc = {
+        "HeavyAtoms": mol.GetNumAtoms()
+    }
     for descriptor in selected_descriptors:
         function = RDKIT_DESCRIPTORS[descriptor]
         try:
