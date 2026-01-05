@@ -1,0 +1,16 @@
+ID,smiles
+Mesembrine,CN1CC[C@]2([C@@H]1CC(=O)CC2)C3=CC(=C(C=C3)OC)OC
+Mesembrenone,CN1CC[C@]2([C@@H]1CC(=O)C=C2)C3=CC(=C(C=C3)OC)OC
+D7-Mesembrenone,CN1CCC2(C1=CC(=O)CC2)C3=CC(=C(C=C3)OC)OC
+Mesembranol,CN1CCC2(C1CC(CC2)O)C3=CC(=C(C=C3)OC)OC
+4'-O-demethylmesembranol,CN1CCC2(C1CC(CC2)O)C3=CC(=C(C=C3)O)OC
+Mesembrenol,CN1CCC2(C1CC(C=C2)O)C3=CC(=C(C=C3)OC)OC
+4'-O-demethylmesembrenol,CN1CCC2(C1CC(C=C2)O)C3=CC(=C(C=C3)O)OC
+4'-O-demethylmesembrenone,CN1CC[C@]2([C@@H]1CC(=O)C=C2)C3=CC(=C(C=C3)O)OC
+Sceletenone,CN1CC[C@]2([C@@H]1CC(=O)C=C2)C3=CC=C(C=C3)O
+N-demethyl-N-formyl-mesembrenone,O=CN1CC[C@]2([C@@H]1CC(=O)C=C2)C3=CC(=C(C=C3)OC)OC
+O-acetylmesembrenol,CN1CCC2(C1CC(C=C2)OC(=O)C)C3=CC(=C(C=C3)OC)OC
+Mesembrane,CN1CC[C@@]2([C@H]1CCCC2)C3=CC(=C(C=C3)OC)OC
+N-demethylmesembranol,N1CCC2(C1CC(CC2)O)C3=CC(=C(C=C3)OC)OC
+N-demethylmesembrenol,N1CCC2(C1CC(C=C2)O)C3=CC(=C(C=C3)OC)OC
+Sceletium A4,COC1=CC=C([C@@]23CCC4=NC=CC=C4[C@@H]2N(C)CC3)C=C1OC
