@@ -215,7 +215,7 @@ def read_sdf(file):
     return pd.DataFrame(molecules)
 
 
-def get_descriptors(mol):
+def get_descriptors_mol(mol):
     selected_descriptors = [
         "ExactMolWt",
         "RingCount",
@@ -281,7 +281,7 @@ def count_veber_violations(desc):
 
 def calculate_selected_descriptors(mol):
     # calculate molecular descriptors
-    descriptors = get_descriptors(mol)
+    descriptors = get_descriptors_mol(mol)
     # calculate atomic descriptors
     descriptors["NumOxygen"] = count_oxygen_atoms(mol)
     descriptors["NumNitrogen"] = count_nitrogen_atoms(mol)
@@ -291,7 +291,7 @@ def calculate_selected_descriptors(mol):
     return descriptors
 
 
-def matrix_to_descriptors(filepath):
+def get_descriptors_dataframe(filepath):
     df = pd.read_csv(filepath)
     try:
         PandasTools.AddMoleculeColumnToFrame(df, smilesCol="taut_smiles")
