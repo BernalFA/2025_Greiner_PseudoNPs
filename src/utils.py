@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
+from pandarallel import pandarallel
 from rdkit import Chem
-from rdkit.Chem import Descriptors
+from rdkit.Chem import Descriptors, PandasTools
 from rdkit.Chem.MolStandardize import rdMolStandardize
 
 
@@ -288,3 +289,23 @@ def calculate_selected_descriptors(mol):
     descriptors["LipinskiViolations"] = count_lipinski_violations(descriptors)
     descriptors["VeberViolations"] = count_veber_violations(descriptors)
     return descriptors
+
+
+def matrix_to_descriptors(filepath):
+    df = pd.read_csv(filepath)
+    try:
+        PandasTools.AddMoleculeColumnToFrame(df, smilesCol="taut_smiles")
+    except KeyError:
+        PandasTools.AddMoleculeColumnToFrame(df, smilesCol="smiles")
+
+    if len(df) > 1000:
+        pandarallel.initialize(nb_workers=24, progress_bar=True)
+        descriptors = df["ROMol"].parallel_apply(
+            calculate_selected_descriptors
+        ).apply(pd.Series)
+    else:
+        descriptors = df["ROMol"].apply(
+            calculate_selected_descriptors
+        ).apply(pd.Series)
+    result = pd.concat((df[df.columns[0]].copy(), descriptors), axis=1)
+    return result
