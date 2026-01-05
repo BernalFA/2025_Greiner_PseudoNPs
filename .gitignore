@@ -5,6 +5,8 @@
 
 # Results
 /reports/figures/
+/notebooks/2.0*
+/notebooks/test*
 
 # Mac OS-specific storage files
 .DS_Store
