@@ -1,5 +1,7 @@
 import logging
 from io import StringIO
+from pathlib import PosixPath
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +19,7 @@ handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
 
-def get_message():
+def get_message() -> str:
     text = logger_sio.getvalue()
     logger_sio.truncate(0)
     logger_sio.seek(0)
@@ -26,7 +28,7 @@ def get_message():
     return ""
 
 
-def generate_3d(mol, random_state):
+def generate_3d(mol: Chem.Mol, random_state: int) -> tuple[Optional[Chem.Mol], list]:
     messages = []
     s = Chem.SanitizeMol(mol, catchErrors=True)
     messages.append(get_message())
@@ -55,7 +57,7 @@ def generate_3d(mol, random_state):
     return None, messages
 
 
-def calc_pmi(mol, replicates=3):
+def calc_pmi(mol: Chem.Mol, replicates: int=3) -> tuple[float, float]:
     npr1 = []
     npr2 = []
     for rdst in [2025 + 3 * i for  i in range(replicates)]:
@@ -68,7 +70,7 @@ def calc_pmi(mol, replicates=3):
     return np.median(npr1), np.median(npr2)
 
 
-def get_pmis(filepath):
+def get_pmis(filepath: Union[str, PosixPath]) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     smi_col = df.columns[df.columns.str.contains("smiles")][0]
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smi_col)

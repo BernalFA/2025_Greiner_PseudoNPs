@@ -1,13 +1,17 @@
+from pathlib import PosixPath
+from typing import Union
+
 import numpy as np
 import pandas as pd
 from pandarallel import pandarallel
+from rdkit import Chem
 from rdkit.Chem import Descriptors, PandasTools
 
 
 RDKIT_DESCRIPTORS = dict(Descriptors._descList)
 
 
-def get_descriptors_mol(mol):
+def get_descriptors_mol(mol: Chem.Mol) -> dict:
     selected_descriptors = [
         "ExactMolWt",
         "RingCount",
@@ -37,7 +41,7 @@ def get_descriptors_mol(mol):
     return calc_desc
 
 
-def count_oxygen_atoms(mol):
+def count_oxygen_atoms(mol: Chem.Mol) -> int:
     count = 0
     for atom in mol.GetAtoms():
         if atom.GetAtomicNum() == 8:
@@ -45,7 +49,7 @@ def count_oxygen_atoms(mol):
     return count
 
 
-def count_nitrogen_atoms(mol):
+def count_nitrogen_atoms(mol: Chem.Mol) -> int:
     count = 0
     for atom in mol.GetAtoms():
         if atom.GetAtomicNum() == 7:
@@ -53,7 +57,7 @@ def count_nitrogen_atoms(mol):
     return count
 
 
-def count_lipinski_violations(desc):
+def count_lipinski_violations(desc: dict) -> int:
     violations = [
         desc["ExactMolWt"] < 150 or desc["ExactMolWt"] > 500,
         desc["MolLogP"] > 5,
@@ -63,7 +67,7 @@ def count_lipinski_violations(desc):
     return sum(violations)
 
 
-def count_veber_violations(desc):
+def count_veber_violations(desc: dict) -> int:
     violations = [
         desc["NumRotatableBonds"] > 10,
         desc["TPSA"] > 140
@@ -71,7 +75,7 @@ def count_veber_violations(desc):
     return sum(violations)
 
 
-def calculate_selected_descriptors(mol):
+def calculate_selected_descriptors(mol: Chem.Mol) -> dict:
     # calculate molecular descriptors
     descriptors = get_descriptors_mol(mol)
     # calculate atomic descriptors
@@ -83,7 +87,7 @@ def calculate_selected_descriptors(mol):
     return descriptors
 
 
-def get_descriptors_dataframe(filepath):
+def get_descriptors_dataframe(filepath: Union[str, PosixPath]) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     try:
         PandasTools.AddMoleculeColumnToFrame(df, smilesCol="taut_smiles")

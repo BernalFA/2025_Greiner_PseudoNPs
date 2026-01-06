@@ -1,5 +1,6 @@
 import sys
-from pathlib import Path
+from pathlib import Path, PosixPath
+from typing import Union
 
 import pandas as pd
 from pandarallel import pandarallel
@@ -26,7 +27,8 @@ fscore = npscorer.readNPModel()
 def score_np(mol):
     return npscorer.scoreMol(mol, fscore)
 
-def get_scores(filepath):
+
+def get_scores(filepath: Union[str, PosixPath]) -> pd.DataFrame:
     df = pd.read_csv(filepath)
     smi_col = df.columns[df.columns.str.contains("smiles")][0]
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smi_col)

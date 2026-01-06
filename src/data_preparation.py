@@ -20,7 +20,7 @@ path_data = HERE / "data"
 
 
 # ChEMBL
-def prepare_chembl_with_sugars(chembl):
+def prepare_chembl_with_sugars(chembl: pd.DataFrame) -> pd.DataFrame:
     df = chembl.copy()
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol="smiles")
 
@@ -32,7 +32,7 @@ def prepare_chembl_with_sugars(chembl):
 # Interestingly, CDK mols are left as some sort of radicals (apparently, the mol2smi transformation
 # does not work well and the implicit hydrogens are somehow treated as radical sources).
 # The smiles have to be manually modified
-def remove_false_radicals(mol):
+def remove_false_radicals(mol: Chem.Mol) -> str:
     for atom in mol.GetAtoms():
         atom.SetNumRadicalElectrons(0)
     new_smi = Chem.MolToSmiles(mol)  # necessary to avoid conflict with mutable objects in pandas
@@ -40,7 +40,7 @@ def remove_false_radicals(mol):
 
 
 # At this point, sugars were removed using the CDK Sugar Remover extension for KNIME
-def prepare_chembl_no_sugars():
+def prepare_chembl_no_sugars() -> pd.DataFrame:
     chembl_no_sugars = pd.read_csv(path_data / "interim" / "chembl_35_NP_no_sugars.csv")
     chembl_no_sugars.fillna("", inplace=True)
     for _, row in chembl_no_sugars.iterrows():
@@ -65,8 +65,8 @@ def prepare_chembl_no_sugars():
 
 
 # GENERAL
-def process_library(df, smilesCol="smiles", molCol="ROMol",
-                    workers=12, subsample=False):
+def process_library(df: pd.DataFrame, smilesCol: str="smiles", molCol: str="ROMol",
+                    workers: int=12, subsample: bool=False) -> pd.DataFrame:
     df = df.copy()
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smilesCol, molCol=molCol)
     df.dropna(subset=[molCol], inplace=True)
@@ -84,7 +84,7 @@ def process_library(df, smilesCol="smiles", molCol="ROMol",
     return result
 
 
-def get_scaffolds(representatives):
+def get_scaffolds(representatives: dict) -> set:
     scaffolds_smiles = set()
     for smi in representatives.values():
         mol = Chem.MolFromSmiles(smi)
@@ -98,7 +98,7 @@ def get_scaffolds(representatives):
     return scaffolds_smiles
 
 
-def contain_min_scaffold(mol, family):
+def contain_min_scaffold(mol: Chem.Mol, family: str) -> bool:
     if family == "mias":
         mias = {
             "tryptamine": "C1=CC=C2C(=C1)C(=CN2)CCN",
@@ -130,7 +130,7 @@ def contain_min_scaffold(mol, family):
     return False
 
 
-def comply_restrictions_mias(mol):
+def comply_restrictions_mias(mol: Chem.Mol) -> bool:
     scaffold = MurckoScaffold.GetScaffoldForMol(mol)
     n_heavy_atoms = HeavyAtomCount(scaffold)
     sssr = Chem.GetSSSR(mol)
@@ -143,14 +143,14 @@ def comply_restrictions_mias(mol):
     return True
 
 
-def comply_restrictions_amaryllidaceae(mol):
+def comply_restrictions_amaryllidaceae(mol: Chem.Mol) -> bool:
     scaffold = MurckoScaffold.GetScaffoldForMol(mol)
     if count_nitrogen_atoms(scaffold) > 1:
         return False
     return True
 
 
-def prepare_mias(database_df):
+def prepare_mias(database_df: pd.DataFrame) -> pd.DataFrame:
     mias = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["taut_smiles"])
@@ -161,7 +161,7 @@ def prepare_mias(database_df):
     return database_df.iloc[mias].copy()
 
 
-def prepare_sceletium():
+def prepare_sceletium() -> pd.DataFrame:
     full_sceletium = {
         "ID": [
             "Mesembrine",
@@ -203,7 +203,7 @@ def prepare_sceletium():
     return sceletium
 
 
-def prepare_amaryllidaceae(database_df):
+def prepare_amaryllidaceae(database_df: pd.DataFrame) -> pd.DataFrame:
     am_alkaloids = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["taut_smiles"])
@@ -214,7 +214,7 @@ def prepare_amaryllidaceae(database_df):
     return database_df.iloc[am_alkaloids].copy()
 
 
-def prepare_hasubanan(database_df):
+def prepare_hasubanan(database_df: pd.DataFrame) -> pd.DataFrame:
     hasubanan = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["canonical_smiles"])

@@ -1,3 +1,5 @@
+from pathlib import PosixPath
+
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import Descriptors
@@ -9,7 +11,9 @@ RDKIT_DESCRIPTORS = dict(Descriptors._descList)
 
 # Simplified from https://www.blopig.com/blog/2022/05/molecular-standardization/
 # stereo removal was added to comply with Axel's original procedure
-def standardize_mol(mol, remove_stereo=False, canonicalize_tautomer=False):
+def standardize_mol(
+        mol: Chem.Mol, remove_stereo: bool=False, canonicalize_tautomer: bool=False
+    ) -> Chem.Mol:
     """Standardize the RDKit molecule, select its parent molecule, uncharge it,
     then enumerate all the tautomers.
     """
@@ -56,8 +60,8 @@ class CompoundLibraryFilter:
     }
 
     def __init__(
-            self, mol_col, filter_isotopes=True, min_heavy_atoms=3, max_heavy_atoms=75,
-            filter_unsual_atoms=True, n_jobs=6
+            self, mol_col: str, filter_isotopes: bool=True, min_heavy_atoms: int=3,
+            max_heavy_atoms: int=75, filter_unsual_atoms: bool=True, n_jobs: int=6
     ):
         self.mol_col = mol_col
         self.filter_isotopes = filter_isotopes
@@ -67,15 +71,15 @@ class CompoundLibraryFilter:
         self.n_jobs = n_jobs
 
     @property
-    def medchem_atoms(self):
+    def medchem_atoms(self) -> list:
         return list(self._medchem_atoms.keys())
 
     @medchem_atoms.setter
-    def medchem_atoms(self, value):
+    def medchem_atoms(self, values: list):
         periodic_table = Chem.GetPeriodicTable()
         elements = {}
-        if isinstance(value, list):
-            for v in value:
+        if isinstance(values, list):
+            for v in values:
                 try:
                     z = periodic_table.GetAtomicNumber(v)
                     if v not in elements:
@@ -87,22 +91,22 @@ class CompoundLibraryFilter:
             }
         else:
             raise ValueError(
-                f"Several chemical elements expected but only {value} given"
+                f"Several chemical elements expected but only {values} given"
             )
 
-    def _get_atom_set(self, mol):
+    def _get_atom_set(self, mol: Chem.Mol) -> set:
         return {at.GetAtomicNum() for at in mol.GetAtoms()}
 
-    def _has_non_medchem_atoms(self, mol):
+    def _has_non_medchem_atoms(self, mol: Chem.Mol) -> int:
         return len(self._get_atom_set(mol) - set(self._medchem_atoms.values())) > 0
 
-    def _has_isotope(self, mol):
+    def _has_isotope(self, mol: Chem.Mol) -> bool:
         for at in mol.GetAtoms():
             if at.GetIsotope() != 0:
                 return True
         return False
 
-    def identify_isotopes(self, df):
+    def identify_isotopes(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         if self.n_jobs > 1:
             df["HasIsotopes"] = df[self.mol_col].parallel_apply(self._has_isotope)
@@ -110,7 +114,7 @@ class CompoundLibraryFilter:
             df["HasIsotopes"] = df[self.mol_col].apply(self._has_isotope)
         return df
 
-    def identify_unusual_atoms(self, df):
+    def identify_unusual_atoms(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         if self.n_jobs > 1:
             df["HasNonMedChemAtoms"] = df[self.mol_col].parallel_apply(
@@ -122,7 +126,7 @@ class CompoundLibraryFilter:
             )
         return df
 
-    def get_heavy_atom_count(self, df):
+    def get_heavy_atom_count(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         if self.n_jobs > 1:
             df["HeavyAtomCount"] = df[self.mol_col].parallel_apply(
@@ -134,7 +138,7 @@ class CompoundLibraryFilter:
             )
         return df
 
-    def drop_duplicates(self, df):
+    def drop_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.copy()
         if self.n_jobs > 1:
             df["InchiKey"] = df[self.mol_col].parallel_apply(Chem.MolToInchiKey)
@@ -143,7 +147,7 @@ class CompoundLibraryFilter:
         df.drop_duplicates(subset="InchiKey", inplace=True)
         return df
 
-    def _drop_columns(self, df):
+    def _drop_columns(self, df: pd.DataFrame) -> pd.DataFrame:
         cols_to_delete = [
             "HasIsotopes", "HasNonMedChemAtoms", "HeavyAtomCount", "InchiKey"
         ]
@@ -151,7 +155,7 @@ class CompoundLibraryFilter:
         df.drop(columns=existing_cols, inplace=True)
         return df
 
-    def filter(self, df):
+    def filter(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.filter_isotopes:
             df = self.identify_isotopes(df)
             df = df.query("HasIsotopes == False").copy()
@@ -172,7 +176,7 @@ class CompoundLibraryFilter:
         return df
 
 
-def read_sdf(file):
+def read_sdf(file: PosixPath) -> pd.DataFrame:
     mol_supplier = Chem.MultithreadedSDMolSupplier(
         file, numWriterThreads=6, sanitize=False, removeHs=False
     )
