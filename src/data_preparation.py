@@ -14,12 +14,6 @@ sys.path.append(str(Path.cwd()))
 from src.utils import standardize_mol, CompoundLibraryFilter, count_nitrogen_atoms  # noqa: E402
 
 
-# Define path
-HERE = Path.cwd()
-path_data = HERE / "data"
-
-
-# ChEMBL
 def prepare_chembl_with_sugars(chembl: pd.DataFrame) -> pd.DataFrame:
     df = chembl.copy()
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol="smiles")
@@ -41,7 +35,7 @@ def remove_false_radicals(mol: Chem.Mol) -> str:
 
 # At this point, sugars were removed using the CDK Sugar Remover extension for KNIME
 def prepare_chembl_no_sugars() -> pd.DataFrame:
-    chembl_no_sugars = pd.read_csv(path_data / "interim" / "chembl_35_NP_no_sugars.csv")
+    chembl_no_sugars = pd.read_csv(Path.cwd() / "data" / "interim" / "chembl_35_NP_no_sugars.csv")
     chembl_no_sugars.fillna("", inplace=True)
     for _, row in chembl_no_sugars.iterrows():
         if row["smiles_no_sugar"] == "":
@@ -64,7 +58,6 @@ def prepare_chembl_no_sugars() -> pd.DataFrame:
     return chembl_no_sugars_filtered
 
 
-# GENERAL
 def process_library(df: pd.DataFrame, smilesCol: str="smiles", molCol: str="ROMol",
                     workers: int=12, subsample: bool=False) -> pd.DataFrame:
     df = df.copy()
