@@ -1,14 +1,19 @@
+"""
+This script calculates different scores, including the NP likeness, the Quantitative
+Estimate of Drug-likeness (QED), the Böttcher score, and the normalized Spacial Score
+(SPS).
+"""
+
 from pathlib import Path
 
 import pandas as pd
 
-# Add path to RDKit contributions
-# taken from https://github.com/rdkit/rdkit/issues/2279
 import sys
 
 sys.path.append(str(Path.cwd()))
 
 from src.scores import get_scores
+
 
 if __name__ == "__main__":
     HERE = Path.cwd()

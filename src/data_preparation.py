@@ -1,3 +1,9 @@
+"""
+This module provides useful functions for the preparation of compound collections,
+including those from specific alkaloid families.
+
+"""
+
 import sys
 from pathlib import Path
 
@@ -11,10 +17,19 @@ from tqdm import tqdm
 
 sys.path.append(str(Path.cwd()))
 
-from src.utils import standardize_mol, CompoundLibraryFilter, count_nitrogen_atoms  # noqa: E402
+from src.utils import standardize_mol, CompoundLibraryFilter  # noqa: E402
+from src.features import count_nitrogen_atoms  # noqa: E402
 
 
 def prepare_chembl_with_sugars(chembl: pd.DataFrame) -> pd.DataFrame:
+    """Standardize molecular structures on given dataframe containing SMILES.
+
+    Args:
+        chembl (pd.DataFrame): ChEMBL compounds.
+
+    Returns:
+        pd.DataFrame: Standardized molecules.
+    """
     df = chembl.copy()
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol="smiles")
 
@@ -23,10 +38,18 @@ def prepare_chembl_with_sugars(chembl: pd.DataFrame) -> pd.DataFrame:
     df["clean_smiles"] = df["clean_mol"].apply(Chem.MolToSmiles)
     return df
 
-# Interestingly, CDK mols are left as some sort of radicals (apparently, the mol2smi
-# transformation does not work well and the implicit hydrogens are somehow treated as
-# radical sources). The smiles have to be manually modified
+
 def remove_false_radicals(mol: Chem.Mol) -> str:
+    """Ensure no false radicals are present in SMILES. Somehow, CDK mols (after sugar
+    removal with CDK node in KNIME) are left as some sort of radicals. The mol2smi
+    transformation treats implicit hydrogens as radical sources.
+
+    Args:
+        mol (Chem.Mol): RDKit mol object.
+
+    Returns:
+        str: Corrected SMILES without radicals.
+    """
     for atom in mol.GetAtoms():
         atom.SetNumRadicalElectrons(0)
     # To avoid conflict with mutable objects in pandas
@@ -34,8 +57,15 @@ def remove_false_radicals(mol: Chem.Mol) -> str:
     return new_smi
 
 
-# At this point, sugars were removed using the CDK Sugar Remover extension for KNIME
 def prepare_chembl_no_sugars() -> pd.DataFrame:
+    """Prepare compounds from ChEMBL, including standardization, filtering off large
+    molecules, those containing unconventional isotopes, and removing duplicates based
+    on the favored tautomer SMILES. This should be used after sugars are removed using
+    the CDK Sugar Remover extension for KNIME.
+
+    Returns:
+        pd.DataFrame: Processed compounds with standardized SMILES.
+    """
     path = Path.cwd() / "data" / "interim" / "chembl_35_NP_no_sugars.csv"
     chembl_no_sugars = pd.read_csv(path)
     chembl_no_sugars.fillna("", inplace=True)
@@ -68,6 +98,24 @@ def prepare_chembl_no_sugars() -> pd.DataFrame:
 
 def process_library(df: pd.DataFrame, smilesCol: str="smiles", molCol: str="ROMol",
                     workers: int=12, subsample: bool=False) -> pd.DataFrame:
+    """Process any compound collection/library, to obtain standardized structures.
+    Compounds containing unconventional atoms, unconventional isotopes or having large
+    molecular weight are removed. Duplicates are filtered off.
+
+    Args:
+        df (pd.DataFrame): compound collection.
+        smilesCol (str, optional): name of the column containing SMILES.
+                                   Defaults to "smiles".
+        molCol (str, optional): name of the column that will contain the RDKit Mol
+                                object. Defaults to "ROMol".
+        workers (int, optional): number of processes to run simultaneously.
+                                 Defaults to 12.
+        subsample (bool, optional): whether to randomly sample 50k compounds.
+                                    Defaults to False.
+
+    Returns:
+        pd.DataFrame: processed compounds.
+    """
     df = df.copy()
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smilesCol, molCol=molCol)
     df.dropna(subset=[molCol], inplace=True)
@@ -85,9 +133,18 @@ def process_library(df: pd.DataFrame, smilesCol: str="smiles", molCol: str="ROMo
     return result
 
 
-def get_scaffolds(representatives: dict) -> set:
+def get_scaffolds(compounds: dict) -> set:
+    """Collect unique Mircko scaffold from a collection of compounds.
+
+    Args:
+        representatives (dict): identifiers (keys) and SMILES (values) for the set of
+                                compounds to analyze.
+
+    Returns:
+        set: unique Mircko scaffolds for the given structures.
+    """
     scaffolds_smiles = set()
-    for smi in representatives.values():
+    for smi in compounds.values():
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
             continue
@@ -100,6 +157,16 @@ def get_scaffolds(representatives: dict) -> set:
 
 
 def contain_min_scaffold(mol: Chem.Mol, family: str) -> bool:
+    """Verify that a given molecule contains the specific scaffold(s) known to the
+    alkaloid family.
+
+    Args:
+        mol (Chem.Mol): RDKit Mol object.
+        family (str): alkaloid family from mias, amaryllidaceae or hasubanan.
+
+    Returns:
+        bool: True if the molecule belongs to the specified family.
+    """
     if family == "mias":
         mias = {
             "tryptamine": "C1=CC=C2C(=C1)C(=CN2)CCN",
@@ -132,6 +199,14 @@ def contain_min_scaffold(mol: Chem.Mol, family: str) -> bool:
 
 
 def comply_restrictions_mias(mol: Chem.Mol) -> bool:
+    """Check whether the given molecule belongs to MIAs.
+
+    Args:
+        mol (Chem.Mol): RDKit Mol object.
+
+    Returns:
+        bool: True when the molecule belongs to MIAs.
+    """
     scaffold = MurckoScaffold.GetScaffoldForMol(mol)
     n_heavy_atoms = HeavyAtomCount(scaffold)
     sssr = Chem.GetSSSR(mol)
@@ -145,6 +220,14 @@ def comply_restrictions_mias(mol: Chem.Mol) -> bool:
 
 
 def comply_restrictions_amaryllidaceae(mol: Chem.Mol) -> bool:
+    """Check whether the given molecule belongs to Amaryllidaceae alkaloids.
+
+    Args:
+        mol (Chem.Mol): RDKit Mol object.
+
+    Returns:
+        bool: True when the molecule belongs to Amaryllidaceae alkaloids.
+    """
     scaffold = MurckoScaffold.GetScaffoldForMol(mol)
     if count_nitrogen_atoms(scaffold) > 1:
         return False
@@ -152,6 +235,15 @@ def comply_restrictions_amaryllidaceae(mol: Chem.Mol) -> bool:
 
 
 def prepare_mias(database_df: pd.DataFrame) -> pd.DataFrame:
+    """Collect all available compounds in the given database that can be catalogued
+    as MIAs.
+
+    Args:
+        database_df (pd.DataFrame): compound collection.
+
+    Returns:
+        pd.DataFrame: retrieved MIAs.
+    """
     mias = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["taut_smiles"])
@@ -163,6 +255,11 @@ def prepare_mias(database_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_sceletium() -> pd.DataFrame:
+    """Generate a dataframe with reported alkaloids from the Sceletium genera.
+
+    Returns:
+        pd.DataFrame: known Sceletium alkaloids.
+    """
     full_sceletium = {
         "ID": [
             "Mesembrine",
@@ -205,6 +302,15 @@ def prepare_sceletium() -> pd.DataFrame:
 
 
 def prepare_amaryllidaceae(database_df: pd.DataFrame) -> pd.DataFrame:
+    """Collect all available compounds in the given database that can be catalogued
+    as Amaryllidaceae alkaloids.
+
+    Args:
+        database_df (pd.DataFrame): compound collection.
+
+    Returns:
+        pd.DataFrame: retrieved Amaryllidaceae alkaloids.
+    """
     am_alkaloids = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["taut_smiles"])
@@ -216,6 +322,15 @@ def prepare_amaryllidaceae(database_df: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare_hasubanan(database_df: pd.DataFrame) -> pd.DataFrame:
+    """Collect all available compounds in the given database that can be catalogued
+    as Hasubanan alkaloids.
+
+    Args:
+        database_df (pd.DataFrame): compound collection.
+
+    Returns:
+        pd.DataFrame: retrieved Hasubanan alkaloids.
+    """
     hasubanan = []
     for i, row in tqdm(database_df.iterrows(), total=len(database_df)):
         mol = Chem.MolFromSmiles(row["canonical_smiles"])

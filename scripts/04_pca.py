@@ -1,3 +1,9 @@
+"""
+This script runs Principal Component Analysis (PCA) on the descriptors obtained after
+running `03_feature_calculation.py`. Both PCA loadings and explained variance are saved
+to disk.
+"""
+
 from pathlib import Path
 
 import pandas as pd

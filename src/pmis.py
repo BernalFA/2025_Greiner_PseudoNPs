@@ -1,3 +1,9 @@
+"""
+This module provides some functions necessary for the calculation of Principal Moments
+of Inertia.
+
+"""
+
 import logging
 from io import StringIO
 from pathlib import PosixPath
@@ -20,6 +26,7 @@ logger.addHandler(handler)
 
 
 def get_message() -> str:
+    """Retrieve RDKit logs."""
     text = logger_sio.getvalue()
     logger_sio.truncate(0)
     logger_sio.seek(0)
@@ -29,6 +36,18 @@ def get_message() -> str:
 
 
 def generate_3d(mol: Chem.Mol, random_state: int) -> tuple[Optional[Chem.Mol], list]:
+    """Check given molecule, generate and embedding and run force field-based
+    minimization.
+
+    Args:
+        mol (Chem.Mol): molecule.
+        random_state (int): random seed.
+
+    Returns:
+        tuple[Optional[Chem.Mol], list]: if minimization is successful, it returns the
+                                         3D molecule together with a list of RDKit
+                                         messages/warnings.
+    """
     messages = []
     s = Chem.SanitizeMol(mol, catchErrors=True)
     messages.append(get_message())
@@ -58,6 +77,17 @@ def generate_3d(mol: Chem.Mol, random_state: int) -> tuple[Optional[Chem.Mol], l
 
 
 def calc_pmi(mol: Chem.Mol, replicates: int=3) -> tuple[float, float]:
+    """Calculate normalized PMIs for the given molecule upon 2D to 3D transformation
+    and minimization. The process is repeated `replicates` times to account for the
+    random generation of conformers.
+
+    Args:
+        mol (Chem.Mol): molecule.
+        replicates (int, optional): number of replicates to run. Defaults to 3.
+
+    Returns:
+        tuple[float, float]: median normalized PMIs for the molecule.
+    """
     npr1 = []
     npr2 = []
     for rdst in [2025 + 3 * i for  i in range(replicates)]:
@@ -71,6 +101,15 @@ def calc_pmi(mol: Chem.Mol, replicates: int=3) -> tuple[float, float]:
 
 
 def get_pmis(filepath: Union[str, PosixPath]) -> pd.DataFrame:
+    """Calculate normalized PMIs for a set of compounds contained in a file.
+
+    Args:
+        filepath (Union[str, PosixPath]): path to file containing SMILES.
+
+    Returns:
+        pd.DataFrame: normalized PMIs for all the compounds in the file.
+                      Values are medians from repeated calculations.
+    """
     df = pd.read_csv(filepath)
     smi_col = df.columns[df.columns.str.contains("smiles")][0]
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smi_col)

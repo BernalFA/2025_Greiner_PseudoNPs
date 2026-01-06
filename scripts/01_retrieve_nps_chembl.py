@@ -1,10 +1,15 @@
+"""
+This script presents a simple programatic access to the **ChEMBL 35** database
+using `SQLite`. It retrieves compounds flagged as natural products.
+"""
+
 import csv
 import sqlite3
 from pathlib import Path
 
 
 # Define paths
-HERE = Path.cwd().parent
+HERE = Path.cwd()
 LIBRARIES_PATH = HERE.parent / "compound_collections"
 CHEMBL_PATH = LIBRARIES_PATH / "chembl_35" / "chembl_35_sqlite" / "chembl_35.db"
 

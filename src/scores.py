@@ -1,3 +1,10 @@
+"""
+This module provides a helper function to simultaneously calculate NP likeness,
+Quantitative Estimate of Drug-likeness (QED), Böttcher score, and the normalized
+Spacial Score (SPS).
+
+"""
+
 import sys
 from pathlib import Path, PosixPath
 from typing import Union
@@ -30,6 +37,16 @@ def score_np(mol):
 
 
 def get_scores(filepath: Union[str, PosixPath]) -> pd.DataFrame:
+    """Calculate NP likeness, Quantitative Estimate of Drug-likeness (QED), Böttcher
+    score, and the normalized Spacial Score (SPS) for all the compounds in the given
+    file.
+
+    Args:
+        filepath (Union[str, PosixPath]): path to file containing SMILES.
+
+    Returns:
+        pd.DataFrame: calculated scores.
+    """
     df = pd.read_csv(filepath)
     smi_col = df.columns[df.columns.str.contains("smiles")][0]
     PandasTools.AddMoleculeColumnToFrame(df, smilesCol=smi_col)

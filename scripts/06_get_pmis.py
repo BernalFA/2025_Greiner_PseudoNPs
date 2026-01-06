@@ -1,3 +1,9 @@
+"""
+This script performs molecular embedding, a simple force field-based energy
+minimization, and subsequent calculation of the Principal Moments of Inertia (PMIs)
+for all compounds. PMIs are calculated using the corresponding `RDKit`'s implementation.
+"""
+
 import sys
 from pathlib import Path
 

@@ -1,3 +1,14 @@
+"""
+This script helps preparing the different datasets used in the manuscript, including
+natural products reported in **ChEMBL**, compounds reported in the **DrugBank**,
+and a 50k sample from the *Enamine Advanced Screening Collection*. 
+
+Preparation of alkaloid families including monoterpene alkaloids and Amaryllidaceae
+alkaloids reported in ChEMBL as well as Hasubanan alkaloids reported in the **COCONUT**
+database is also included. The prepared datasets are stored as CSV files with
+standardized SMILES.
+"""
+
 import argparse
 import sys
 from pathlib import Path
@@ -23,7 +34,10 @@ LIBRARIES_PATH = HERE.parent / "compound_collections"
 
 
 def arg_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("dataset",
                         choices=[
                             "chembl_sugars",

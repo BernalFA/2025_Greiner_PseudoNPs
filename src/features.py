@@ -1,3 +1,9 @@
+"""
+This module provides useful functions for the calculation of different molecular
+descriptors and some typical drug-like violation counts.
+
+"""
+
 from pathlib import PosixPath
 from typing import Union
 
@@ -12,6 +18,27 @@ RDKIT_DESCRIPTORS = dict(Descriptors._descList)
 
 
 def get_descriptors_mol(mol: Chem.Mol) -> dict:
+    """Calculate a selected set of molecular descriptors for the given molecule. The
+    descriptors set includes: 
+        ExactMolWt
+        RingCount
+        NumAromaticRings
+        NumAliphaticRings
+        NumHDonors
+        NumHAcceptors
+        MolLogP
+        TPSA
+        NumRotatableBonds
+        fr_halogen
+        NumBridgeheadAtoms
+        FractionCSP3
+
+    Args:
+        mol (Chem.Mol): molecule.
+
+    Returns:
+        dict: calculated descriptors.
+    """
     selected_descriptors = [
         "ExactMolWt",
         "RingCount",
@@ -42,6 +69,7 @@ def get_descriptors_mol(mol: Chem.Mol) -> dict:
 
 
 def count_oxygen_atoms(mol: Chem.Mol) -> int:
+    """Calculate the number of Oxygen atoms in the molecule."""
     count = 0
     for atom in mol.GetAtoms():
         if atom.GetAtomicNum() == 8:
@@ -50,6 +78,7 @@ def count_oxygen_atoms(mol: Chem.Mol) -> int:
 
 
 def count_nitrogen_atoms(mol: Chem.Mol) -> int:
+    """Calculate the number of Nitrogen atoms in the molecule."""
     count = 0
     for atom in mol.GetAtoms():
         if atom.GetAtomicNum() == 7:
@@ -58,6 +87,14 @@ def count_nitrogen_atoms(mol: Chem.Mol) -> int:
 
 
 def count_lipinski_violations(desc: dict) -> int:
+    """Check the number of violations to the Lipinski's rule of five.
+
+    Args:
+        desc (dict): descriptors calculated with `get_descriptors_mol`.
+
+    Returns:
+        int: number of violations.
+    """
     violations = [
         desc["ExactMolWt"] < 150 or desc["ExactMolWt"] > 500,
         desc["MolLogP"] > 5,
@@ -68,6 +105,15 @@ def count_lipinski_violations(desc: dict) -> int:
 
 
 def count_veber_violations(desc: dict) -> int:
+    """Check the number of violations to the Veber's rules, where the number of
+    rotatable bonds should not exceed 10 and TPSA should not exceed 140.
+
+    Args:
+        desc (dict): descriptors calculated with `get_descriptors_mol`.
+
+    Returns:
+        int: number of violations.
+    """
     violations = [
         desc["NumRotatableBonds"] > 10,
         desc["TPSA"] > 140
@@ -76,9 +122,17 @@ def count_veber_violations(desc: dict) -> int:
 
 
 def calculate_selected_descriptors(mol: Chem.Mol) -> dict:
+    """Calculate a set of molecular descriptors and drug-like violation counts for the
+    given molecule.
+
+    Args:
+        mol (Chem.Mol): molecule.
+
+    Returns:
+        dict: calculated descriptors.
+    """
     # calculate molecular descriptors
     descriptors = get_descriptors_mol(mol)
-    # calculate atomic descriptors
     descriptors["NumOxygen"] = count_oxygen_atoms(mol)
     descriptors["NumNitrogen"] = count_nitrogen_atoms(mol)
     # calculate drug-like violations
@@ -88,6 +142,15 @@ def calculate_selected_descriptors(mol: Chem.Mol) -> dict:
 
 
 def get_descriptors_dataframe(filepath: Union[str, PosixPath]) -> pd.DataFrame:
+    """Calculate molecular descriptors and drug-like violation counts for all the
+    molecules in a given compound collection.
+
+    Args:
+        filepath (Union[str, PosixPath]): path to file containing SMILES.
+
+    Returns:
+        pd.DataFrame: calculated descriptors for all the compounds in the file.
+    """
     df = pd.read_csv(filepath)
     try:
         PandasTools.AddMoleculeColumnToFrame(df, smilesCol="taut_smiles")

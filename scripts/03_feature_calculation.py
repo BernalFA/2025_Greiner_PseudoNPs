@@ -1,3 +1,8 @@
+"""
+This script helps calculate a set of 17 descriptors (molecular and drug-like features)
+for all the compounds sets. Results are stored to file.
+"""
+
 import sys
 from pathlib import Path
 

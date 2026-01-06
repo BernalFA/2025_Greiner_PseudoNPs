@@ -1,3 +1,9 @@
+"""
+This module provides some utilities for molecule standardization, compound library
+filtering, and file reading.
+
+"""
+
 from pathlib import PosixPath
 
 import pandas as pd
@@ -45,6 +51,11 @@ def standardize_mol(
 
 
 class CompoundLibraryFilter:
+    """Handles filtering of compound libraries. Compounds with unusual atoms (MedChem),
+    unusual isotopes, large molecular weights (high heavy atom count), and duplicates
+    are removed. 
+    Atoms considered usual for MedChem can be changed with the medchem_atoms property.
+    """
     _medchem_atoms = {
         "H": 1,
         "B": 5,
@@ -63,6 +74,19 @@ class CompoundLibraryFilter:
             self, mol_col: str, filter_isotopes: bool=True, min_heavy_atoms: int=3,
             max_heavy_atoms: int=75, filter_unsual_atoms: bool=True, n_jobs: int=6
     ):
+        """
+        Args:
+            mol_col (str): name of column containing molecule (RDKit Mol object).
+            filter_isotopes (bool, optional): whether to filter off molecules with
+                                              unusual isotopes. Defaults to True.
+            min_heavy_atoms (int, optional): minimum number of heavy atoms allowed.
+                                             Defaults to 3.
+            max_heavy_atoms (int, optional): maximum number of heavy atoms allowed.
+                                             Defaults to 75.
+            filter_unsual_atoms (bool, optional): whether to filter off molecules with
+                                                  unusual atoms. Defaults to True.
+            n_jobs (int, optional): number of jobs to run in parallel. Defaults to 6.
+        """
         self.mol_col = mol_col
         self.filter_isotopes = filter_isotopes
         self.min_heavy_atoms = min_heavy_atoms
@@ -72,6 +96,13 @@ class CompoundLibraryFilter:
 
     @property
     def medchem_atoms(self) -> list:
+        """Get or set the chosen group of atoms to allow during filtering.
+        
+        A list of the chemical symbols for the allowed atoms is returned.
+
+        Setting the medchem_atoms will create a completely new set of allowed atoms.
+        For setting, a list of atomic numbers must be given.
+        """
         return list(self._medchem_atoms.keys())
 
     @medchem_atoms.setter
@@ -95,18 +126,22 @@ class CompoundLibraryFilter:
             )
 
     def _get_atom_set(self, mol: Chem.Mol) -> set:
+        """Retrieve atom types in the molecule."""
         return {at.GetAtomicNum() for at in mol.GetAtoms()}
 
     def _has_non_medchem_atoms(self, mol: Chem.Mol) -> int:
+        """Check the number of unsual atoms."""
         return len(self._get_atom_set(mol) - set(self._medchem_atoms.values())) > 0
 
     def _has_isotope(self, mol: Chem.Mol) -> bool:
+        """Check whether the molecule contains unusual or specified isotopes."""
         for at in mol.GetAtoms():
             if at.GetIsotope() != 0:
                 return True
         return False
 
     def identify_isotopes(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Flag molecules containing unusual or minor isotopes."""
         df = df.copy()
         if self.n_jobs > 1:
             df["HasIsotopes"] = df[self.mol_col].parallel_apply(self._has_isotope)
@@ -115,6 +150,7 @@ class CompoundLibraryFilter:
         return df
 
     def identify_unusual_atoms(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Flag molecules containing unusual atoms."""
         df = df.copy()
         if self.n_jobs > 1:
             df["HasNonMedChemAtoms"] = df[self.mol_col].parallel_apply(
@@ -127,6 +163,7 @@ class CompoundLibraryFilter:
         return df
 
     def get_heavy_atom_count(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate the heavy atom count for all the molecules."""
         df = df.copy()
         if self.n_jobs > 1:
             df["HeavyAtomCount"] = df[self.mol_col].parallel_apply(
@@ -139,6 +176,7 @@ class CompoundLibraryFilter:
         return df
 
     def drop_duplicates(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Eliminate duplicates based on Inchi Keys."""
         df = df.copy()
         if self.n_jobs > 1:
             df["InchiKey"] = df[self.mol_col].parallel_apply(Chem.MolToInchiKey)
@@ -148,6 +186,7 @@ class CompoundLibraryFilter:
         return df
 
     def _drop_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Clean the dataframe removing columns used for filtering."""
         cols_to_delete = [
             "HasIsotopes", "HasNonMedChemAtoms", "HeavyAtomCount", "InchiKey"
         ]
@@ -156,6 +195,16 @@ class CompoundLibraryFilter:
         return df
 
     def filter(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Filter off compounds with unusual/minor isotopes, unusual atoms (not common)
+        in MedChem, outside the range of allowed heavy atoms, and duplicates.
+        The resulting dataframe is a copy.
+
+        Args:
+            df (pd.DataFrame): compound collection.
+
+        Returns:
+            pd.DataFrame: filtered library.
+        """
         if self.filter_isotopes:
             df = self.identify_isotopes(df)
             df = df.query("HasIsotopes == False").copy()
@@ -177,6 +226,15 @@ class CompoundLibraryFilter:
 
 
 def read_sdf(file: PosixPath) -> pd.DataFrame:
+    """Utility to read SD files. All the properties in the SD file are stored as
+    separate columns in the resulting dataframe.
+
+    Args:
+        file (PosixPath): path to file.
+
+    Returns:
+        pd.DataFrame: compound collection as dataframe.
+    """
     mol_supplier = Chem.MultithreadedSDMolSupplier(
         file, numWriterThreads=6, sanitize=False, removeHs=False
     )
@@ -186,8 +244,6 @@ def read_sdf(file: PosixPath) -> pd.DataFrame:
     first_mol = True
     for mol in mol_supplier:
         if mol is not None:
-            # name = mol.GetProp("_Name")
-            # molecules["Name"] = name
             if first_mol:
                 props = [prop for prop in mol.GetPropNames()]
                 first_mol = False
