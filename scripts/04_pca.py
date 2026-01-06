@@ -34,7 +34,9 @@ if __name__ == "__main__":
         tmp["new_set"] = file.split(".")[0]
         comparisons = pd.concat((comparisons, tmp), axis=0)
     # Repeat analysis on alkaloids only
-    feature_cols_alk = [col for col in comparisons.columns if col not in ["ID", "dataset", "new_set"]]
+    feature_cols_alk = [
+        col for col in comparisons.columns if col not in ["ID", "dataset", "new_set"]
+    ]
     X_alk = comparisons.loc[:, feature_cols_alk]
 
     scaler = StandardScaler()
@@ -49,4 +51,6 @@ if __name__ == "__main__":
     X_pca_alk_df = pd.DataFrame(X_pca_alk)
     X_pca_alk_df = pd.concat((comp.loc[:, ["ID", "new_set"]], X_pca_alk_df), axis=1)
     X_pca_alk_df.to_csv(HERE / "reports" / "PCA_scores_alkaloids.csv", index=False)
-    pca.explained_variance_ratio_.tofile(HERE / "reports" / "PCA_exp_var_alkaloids.csv", sep=",")
+    pca.explained_variance_ratio_.tofile(
+        HERE / "reports" / "PCA_exp_var_alkaloids.csv", sep=","
+    )

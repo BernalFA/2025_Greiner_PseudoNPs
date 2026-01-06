@@ -15,7 +15,8 @@ sys.path.append(RDConfig.RDContribDir)
 from NP_Score import npscorer
 
 # The Böttcher score was calculated using the implementation from the Forli group.
-# A clone of the original [repo](https://github.com/forlilab/bottchscore/tree/master) was used for it.
+# A clone of the original [repo](https://github.com/forlilab/bottchscore/tree/master)
+# was used for it.
 HERE = Path.cwd()
 bottcher_path = HERE.parent.parent / "Downloads" / "bottchscore"
 

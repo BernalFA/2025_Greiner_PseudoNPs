@@ -9,8 +9,8 @@ sys.path.append(str(Path.cwd()))
 
 from src.utils import read_sdf  # noqa: E402
 from src.data_preparation import (
-    prepare_chembl_with_sugars, prepare_chembl_no_sugars, prepare_amaryllidaceae, prepare_mias, prepare_hasubanan,
-    prepare_sceletium, process_library
+    prepare_chembl_with_sugars, prepare_chembl_no_sugars, prepare_amaryllidaceae,
+    prepare_mias, prepare_hasubanan, prepare_sceletium, process_library
 )
 
 # disable RDKit C++ log
@@ -63,14 +63,15 @@ if __name__ == "__main__":
             path_data / "processed" / "drugbank_5_1_13_cleaned.csv", index=False
         )
     elif args.dataset == "enamine":
-        enamine_file = LIBRARIES_PATH / "enamine_screening_collection_202504" / "Enamine_screening_collection_202504.sdf"
-        molecules = read_sdf(enamine_file)
+        enamine_path = LIBRARIES_PATH / "enamine_screening_collection_202504"
+        molecules = read_sdf(enamine_path / "Enamine_screening_collection_202504.sdf")
         advanced_enamine = molecules.query("Collection == 'Advanced'").copy()
         advanced_enamine.rename(columns={"Catalog_ID": "ID"}, inplace=True)
         enamine_subset_filtered = process_library(advanced_enamine, workers=48,
                                                 subsample=True)
         enamine_subset_filtered[["ID", "taut_smiles"]].to_csv(
-            path_data / "processed" / "enamine_advanced_50k_subset_cleaned.csv", index=False
+            path_data / "processed" / "enamine_advanced_50k_subset_cleaned.csv",
+            index=False
         )
     elif args.dataset == "pnps":
         path_file = path_data / "raw" / "pseudo-NPs.csv"

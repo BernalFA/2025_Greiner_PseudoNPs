@@ -23,19 +23,21 @@ def prepare_chembl_with_sugars(chembl: pd.DataFrame) -> pd.DataFrame:
     df["clean_smiles"] = df["clean_mol"].apply(Chem.MolToSmiles)
     return df
 
-# Interestingly, CDK mols are left as some sort of radicals (apparently, the mol2smi transformation
-# does not work well and the implicit hydrogens are somehow treated as radical sources).
-# The smiles have to be manually modified
+# Interestingly, CDK mols are left as some sort of radicals (apparently, the mol2smi
+# transformation does not work well and the implicit hydrogens are somehow treated as
+# radical sources). The smiles have to be manually modified
 def remove_false_radicals(mol: Chem.Mol) -> str:
     for atom in mol.GetAtoms():
         atom.SetNumRadicalElectrons(0)
-    new_smi = Chem.MolToSmiles(mol)  # necessary to avoid conflict with mutable objects in pandas
+    # To avoid conflict with mutable objects in pandas
+    new_smi = Chem.MolToSmiles(mol)
     return new_smi
 
 
 # At this point, sugars were removed using the CDK Sugar Remover extension for KNIME
 def prepare_chembl_no_sugars() -> pd.DataFrame:
-    chembl_no_sugars = pd.read_csv(Path.cwd() / "data" / "interim" / "chembl_35_NP_no_sugars.csv")
+    path = Path.cwd() / "data" / "interim" / "chembl_35_NP_no_sugars.csv"
+    chembl_no_sugars = pd.read_csv(path)
     chembl_no_sugars.fillna("", inplace=True)
     for _, row in chembl_no_sugars.iterrows():
         if row["smiles_no_sugar"] == "":
@@ -44,17 +46,23 @@ def prepare_chembl_no_sugars() -> pd.DataFrame:
     PandasTools.AddMoleculeColumnToFrame(chembl_no_sugars, smilesCol="smiles_no_sugar")
 
     pandarallel.initialize(nb_workers=24, progress_bar=True)
-    chembl_no_sugars["no_radical_smi"] = chembl_no_sugars["ROMol"].parallel_apply(remove_false_radicals)
-    PandasTools.AddMoleculeColumnToFrame(chembl_no_sugars, smilesCol="no_radical_smi",
-                                        molCol="no_radical_mol")
-    chembl_no_sugars["clean_mol"] = chembl_no_sugars["no_radical_mol"].parallel_apply(standardize_mol)
-
+    chembl_no_sugars["no_radical_smi"] = chembl_no_sugars["ROMol"].parallel_apply(
+        remove_false_radicals
+    )
+    PandasTools.AddMoleculeColumnToFrame(
+        chembl_no_sugars, smilesCol="no_radical_smi", molCol="no_radical_mol"
+    )
+    chembl_no_sugars["clean_mol"] = chembl_no_sugars["no_radical_mol"].parallel_apply(
+        standardize_mol
+    )
     compound_filter = CompoundLibraryFilter(mol_col="clean_mol")
     chembl_no_sugars_filtered = compound_filter.filter(chembl_no_sugars)
     chembl_no_sugars_filtered["taut_mol"] = chembl_no_sugars_filtered["clean_mol"].parallel_apply(
         standardize_mol, canonicalize_tautomer=True
     )
-    chembl_no_sugars_filtered["taut_smiles"] = chembl_no_sugars_filtered["taut_mol"].apply(Chem.MolToSmiles)
+    chembl_no_sugars_filtered["taut_smiles"] = chembl_no_sugars_filtered["taut_mol"].apply(
+        Chem.MolToSmiles
+    )
     return chembl_no_sugars_filtered
 
 
@@ -217,7 +225,9 @@ def prepare_hasubanan(database_df: pd.DataFrame) -> pd.DataFrame:
     
     hasubanan = database_df.iloc[hasubanan].copy()
     PandasTools.AddMoleculeColumnToFrame(hasubanan, smilesCol="canonical_smiles")
-    hasubanan["taut_mol"] = hasubanan["ROMol"].apply(standardize_mol, canonicalize_tautomer=True)
+    hasubanan["taut_mol"] = hasubanan["ROMol"].apply(
+        standardize_mol, canonicalize_tautomer=True
+    )
     hasubanan["taut_smiles"] = hasubanan["taut_mol"].apply(Chem.MolToSmiles)
 
     return hasubanan

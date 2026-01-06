@@ -8,7 +8,8 @@ HERE = Path.cwd().parent
 LIBRARIES_PATH = HERE.parent / "compound_collections"
 CHEMBL_PATH = LIBRARIES_PATH / "chembl_35" / "chembl_35_sqlite" / "chembl_35.db"
 
-# Define SQL statement to retrieve ChEMBL ID and SMILES for compounds flagged as natural products
+# Define SQL statement to retrieve ChEMBL ID and SMILES for compounds flagged
+# as natural products
 sql = """
 SELECT DISTINCT md.chembl_id AS Chembl_Id,
                 cs.canonical_smiles AS Canonical_Smiles
