@@ -21,11 +21,11 @@ $ conda env create -f environment.yml
 The code used for our analyses is presented as Python scripts ([scripts](./scripts/) folder). A short description of each script is presented below.
 
 - `01_retrieve_nps_chembl.py`: this script presents a programatic access to the **ChEMBL 35** database using `SQLite`. It retrieves all compounds flagged as natural products.
-- `02_prepare_datasets.py`: it helps preparing the different datasets used in the manuscript, including ChEMBL natural products, compounds reported in the **DrugBank**, as well as a 50k sample from the *Enamine Advanced Screening Collection*. Preparation of alkaloid families including monoterpene alkaloids and Amaryllidaceae alkaloids reported in ChEMBL as well as Hasubanan alkaloids reported in the **COCONUT** database is alse included. The prepare datasets are stored as CSV files with standardized SMILES.
-- `03_feature_calculation.py`: it allows calculating a set of 17 descriptors (molecular, atomic and drug-like features) for all the compounds sets. Results are stored to file.
-- `04_pca.py`: used to run Principal Component Analysis on the descriptors obtained by `03_feature_calculation.py`. Both PCA loadings and explained variance are saved to disk.
+- `02_prepare_datasets.py`: it helps preparing the different datasets used in the manuscript, including ChEMBL natural products, compounds reported in the **DrugBank**, and a 50k sample from the *Enamine Advanced Screening Collection*. Preparation of alkaloid families including monoterpene alkaloids and Amaryllidaceae alkaloids reported in ChEMBL as well as Hasubanan alkaloids reported in the **COCONUT** database is also included. The prepared datasets are stored as CSV files with standardized SMILES.
+- `03_feature_calculation.py`: it allows calculating a set of 17 descriptors (molecular and drug-like features) for all the compounds sets. Results are stored to file.
+- `04_pca.py`: used to run Principal Component Analysis (PCA) on the descriptors obtained by running `03_feature_calculation.py`. Both PCA loadings and explained variance are saved to disk.
 - `05_get_scores.py`: it calculates different drug-like scores, including the NP likeness, Quantitative Estimate of Drug-likeness (QED), Böttcher score, and the normalized Spacial Score (SPS).
-- `06_get_pmis.py`: the last script perform molecular embedding, a simple force field energy minimization, and subsequent calculation of the Principal Moments of Inertia (PMIs) as defined in the `RDKit`.
+- `06_get_pmis.py`: the last script perform molecular embedding, a simple force field-based energy minimization, and subsequent calculation of the Principal Moments of Inertia (PMIs) as implemented in the `RDKit`.
 
 The data obtained from running those scripts is found in the [reports](./reports/) folder.
 
