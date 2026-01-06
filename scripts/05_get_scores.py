@@ -1,8 +1,6 @@
 from pathlib import Path
 
 import pandas as pd
-from pandarallel import pandarallel
-from rdkit.Chem import PandasTools, QED, SpacialScore
 
 # Add path to RDKit contributions
 # taken from https://github.com/rdkit/rdkit/issues/2279
